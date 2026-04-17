@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-white text-black-900 min-h-screen;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white border border-black-200 rounded-lg shadow-sm;
+  }
+  
+  .button {
+    @apply border border-black-300 rounded-lg px-4 py-2 font-medium transition-all duration-200;
+  }
+  
+  .button-primary {
+    @apply bg-primary-500 text-white border-primary-500 hover:bg-primary-600;
+  }
+  
+  .button-secondary {
+    @apply bg-secondary-500 text-white border-secondary-500 hover:bg-secondary-600;
+  }
+  
+  .button-outline {
+    @apply bg-white text-black-900 border-black-300 hover:bg-black-50;
+  }
+  
+  .status-online {
+    @apply bg-secondary-100 text-secondary-700 border border-secondary-300;
+  }
+  
+  .status-offline {
+    @apply bg-black-100 text-black-700 border border-black-300;
+  }
+  
+  .status-warning {
+    @apply bg-primary-100 text-primary-700 border border-primary-300;
+  }
+  
+  .actuator-card {
+    @apply card p-6 hover:shadow-md transition-shadow duration-200;
+  }
+  
+  .control-button {
+    @apply button w-full py-3 font-semibold transition-all duration-200;
+  }
+  
+  .control-button-on {
+    @apply button-secondary;
+  }
+  
+  .control-button-off {
+    @apply button-outline;
+  }
+  
+  .emergency-stop {
+    @apply bg-black-900 text-white border-black-900 hover:bg-black-800;
+  }
+  
+  .tank-gauge {
+    @apply relative h-4 bg-black-100 rounded-full overflow-hidden;
+  }
+  
+  .tank-fill {
+    @apply h-full transition-all duration-500 ease-out;
+  }
+  
+  .nav-link {
+    @apply px-4 py-2 rounded-lg transition-all duration-200 hover:bg-primary-50;
+  }
+  
+  .nav-link-active {
+    @apply bg-primary-500 text-white;
+  }
+}
