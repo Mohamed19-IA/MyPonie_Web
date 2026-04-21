@@ -11,10 +11,25 @@ import {
   CheckCircle,
   BarChart3,
   Cpu,
-  Wifi
+  Wifi,
+  AlertCircle,
+  WifiOff
 } from 'lucide-react'
+import { useRealTimeData } from '../contexts/RealTimeDataContext'
 
 const Landing = () => {
+  const { 
+    levels, 
+    status, 
+    loading, 
+    error, 
+    connectionStatus, 
+    lastUpdated, 
+    derivedData,
+    getActuatorState,
+    getLevelValue 
+  } = useRealTimeData()
+
   const features = [
     {
       icon: Zap,
@@ -49,21 +64,21 @@ const Landing = () => {
   ]
 
   const stats = [
-    { label: 'Actuators', value: '8' },
-    { label: 'Products', value: '8' },
-    { label: 'Uptime', value: '99.9%' },
-    { label: 'Response', value: '<100ms' }
+    { label: 'Active Actuators', value: derivedData.activeActuators },
+    { label: 'pH Level', value: levels.PH.toFixed(1) },
+    { label: 'System Status', value: derivedData.systemHealth },
+    { label: 'Total Pumps', value: derivedData.totalPumps }
   ]
 
   const actuators = [
-    { id: 'P1', name: 'pH Down', type: 'Pump', icon: Droplets },
-    { id: 'P2', name: 'Calcium', type: 'Pump', icon: Droplets },
-    { id: 'P3', name: 'Blum', type: 'Pump', icon: Droplets },
-    { id: 'P4', name: 'Grow', type: 'Pump', icon: Droplets },
-    { id: 'M1', name: 'Bicarbonate', type: 'Motor', icon: Cpu },
-    { id: 'M2', name: 'Sulfate K', type: 'Motor', icon: Cpu },
-    { id: 'M3', name: 'Sulfate Mg', type: 'Motor', icon: Cpu },
-    { id: 'M4', name: 'Racinaire', type: 'Motor', icon: Cpu }
+    { id: 'P1', name: 'pH Down', type: 'Pump', icon: Droplets, level: levels.P1, state: status.ledP1 },
+    { id: 'P2', name: 'Calcium', type: 'Pump', icon: Droplets, level: levels.P2, state: status.ledP2 },
+    { id: 'P3', name: 'Blum', type: 'Pump', icon: Droplets, level: levels.P3, state: status.ledP3 },
+    { id: 'P4', name: 'Grow', type: 'Pump', icon: Droplets, level: levels.P4, state: status.ledP4 },
+    { id: 'M1', name: 'Bicarbonate', type: 'Motor', icon: Cpu, level: levels.M1, state: status.ledM1 },
+    { id: 'M2', name: 'Sulfate K', type: 'Motor', icon: Cpu, level: levels.M2, state: status.ledM2 },
+    { id: 'M3', name: 'Sulfate Mg', type: 'Motor', icon: Cpu, level: levels.M3, state: status.ledM3 },
+    { id: 'M4', name: 'Racinaire', type: 'Motor', icon: Cpu, level: levels.M4, state: status.ledM4 }
   ]
 
   return (
@@ -71,15 +86,57 @@ const Landing = () => {
       <div className="container mx-auto px-4 py-6">
         {/* Page Title */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-black-900 mb-2">MyPonie Dashboard</h1>
-          <p className="text-black-600">Smart Fertigation System Overview</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-black-900 mb-2">MyPonie Dashboard</h1>
+              <p className="text-black-600">Smart Fertigation System Overview</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              {connectionStatus === 'connected' ? (
+                <div className="flex items-center space-x-1 text-secondary-600">
+                  <Wifi className="w-4 h-4" />
+                  <span className="text-sm">Connected</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-1 text-primary-600">
+                  <WifiOff className="w-4 h-4" />
+                  <span className="text-sm">Disconnected</span>
+                </div>
+              )}
+              <span className="text-xs text-black-600">
+                {lastUpdated.toLocaleTimeString()}
+              </span>
+            </div>
+          </div>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6 p-4 bg-primary-50 border border-primary-200 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <AlertCircle className="w-5 h-5 text-primary-600" />
+              <span className="text-sm text-primary-800">{error}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading && (
+          <div className="mb-6 text-center">
+            <div className="inline-flex items-center space-x-2 text-black-600">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-500"></div>
+              <span>Loading data...</span>
+            </div>
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {stats.map((stat, index) => (
             <div key={index} className="card p-4 text-center">
-              <div className="text-2xl font-bold text-black-900 mb-1">{stat.value}</div>
+              <div className="text-2xl font-bold text-black-900 mb-1">
+                {loading ? '...' : stat.value}
+              </div>
               <div className="text-sm text-black-600">{stat.label}</div>
             </div>
           ))}
@@ -122,19 +179,37 @@ const Landing = () => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-black-600">Status</span>
-                  <span className="status-online px-2 py-1 text-xs">Online</span>
+                  <span className={`px-2 py-1 text-xs ${
+                    connectionStatus === 'connected' 
+                      ? 'status-online' 
+                      : 'status-offline'
+                  }`}>
+                    {connectionStatus === 'connected' ? 'Online' : 'Offline'}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-black-600">pH Level</span>
-                  <span className="text-sm font-medium text-secondary-600">6.8</span>
+                  <span className="text-sm font-medium text-secondary-600">
+                    {loading ? '...' : levels.PH.toFixed(1)}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-black-600">Active Alerts</span>
-                  <span className="text-sm font-medium text-primary-600">2</span>
+                  <span className="text-sm text-black-600">Active Actuators</span>
+                  <span className="text-sm font-medium text-primary-600">
+                    {loading ? '...' : derivedData.activeActuators}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-black-600">Uptime</span>
-                  <span className="text-sm text-black-900">15d 7h</span>
+                  <span className="text-sm text-black-600">pH Status</span>
+                  <span className="text-sm font-medium text-black-900">
+                    {loading ? '...' : derivedData.phStatus}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-black-600">Total Pumps</span>
+                  <span className="text-sm font-medium text-black-900">
+                    {loading ? '...' : derivedData.totalPumps}
+                  </span>
                 </div>
               </div>
             </div>
@@ -158,18 +233,45 @@ const Landing = () => {
 
         {/* Actuators Grid */}
         <div className="card p-6">
-          <h2 className="text-xl font-bold text-black-900 mb-4">Actuator Control</h2>
+          <h2 className="text-xl font-bold text-black-900 mb-4">Actuator Status</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {actuators.map((actuator) => {
               const Icon = actuator.icon
+              const isOn = actuator.state === 'ON'
               return (
-                <div key={actuator.id} className="border border-black-200 rounded-lg p-4 text-center hover:border-primary-300 transition-colors">
-                  <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center mb-2 mx-auto">
-                    <Icon className="w-5 h-5 text-primary-600" />
+                <div key={actuator.id} className={`border rounded-lg p-4 text-center transition-colors ${
+                  isOn 
+                    ? 'border-secondary-300 bg-secondary-50' 
+                    : 'border-black-200 hover:border-primary-300'
+                }`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-2 mx-auto ${
+                    isOn 
+                      ? 'bg-secondary-100' 
+                      : 'bg-primary-50'
+                  }`}>
+                    <Icon className={`w-5 h-5 ${
+                      isOn 
+                        ? 'text-secondary-600' 
+                        : 'text-primary-600'
+                    }`} />
                   </div>
                   <div className="font-bold text-black-900 mb-1">{actuator.id}</div>
                   <div className="text-xs text-black-600">{actuator.name}</div>
                   <div className="text-xs text-primary-600 font-medium mt-1">{actuator.type}</div>
+                  <div className="mt-2 space-y-1">
+                    <div className={`text-xs px-2 py-1 rounded-full ${
+                      isOn 
+                        ? 'bg-secondary-100 text-secondary-700' 
+                        : 'bg-black-100 text-black-700'
+                    }`}>
+                      {isOn ? 'ON' : 'OFF'}
+                    </div>
+                    {actuator.level > 0 && (
+                      <div className="text-xs text-black-600">
+                        Level: {actuator.level}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )
             })}
